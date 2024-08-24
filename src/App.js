@@ -85,7 +85,7 @@ function PointCloud({ url }) {
       const deltaX = event.clientX - startMousePos.x;
       const deltaY = event.clientY - startMousePos.y;
 
-      const sensitivity = 0.0001
+      const sensitivity = 0.0001;
 
       // Rotate around Y-axis for horizontal drag
       pointCloudRef.current.rotation.z += deltaX * sensitivity; // Adjust rotation speed as needed
@@ -105,10 +105,10 @@ function PointCloud({ url }) {
       const deltaY = touch.clientY - startMousePos.y;
 
       // Adjust the sensitivity factor
-      const sensitivity = 0.005; // Lower value for less sensitivity
+      const sensitivity = 0.0001; // Lower value for less sensitivity
 
       // Rotate around Y-axis for horizontal drag
-      pointCloudRef.current.rotation.y += deltaX * sensitivity;
+      pointCloudRef.current.rotation.z += deltaX * sensitivity;
 
       // Rotate around X-axis for vertical drag
       pointCloudRef.current.rotation.x += deltaY * sensitivity;
