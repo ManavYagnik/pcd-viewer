@@ -63,7 +63,7 @@ function PointCloud({ url }) {
       pointCloudRef.current.rotation.x = -Math.PI / 2;
 
       // Scale the point cloud
-      pointCloudRef.current.scale.set(1.5, 1.5, 1.5); // Adjust the scale values as needed
+      pointCloudRef.current.scale.set(3, 3, 3); // Adjust the scale values as needed
     });
   }, [url]);
 
