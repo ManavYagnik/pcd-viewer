@@ -159,7 +159,7 @@ function App() {
     <ambientLight />
     <pointLight position={[100, 100, 100]} />
     
-      <PointCloud url={url}  className="transform -translate-y-[35%]"/>
+      <PointCloud url={url}  />
     
   </Canvas>
 </div>
