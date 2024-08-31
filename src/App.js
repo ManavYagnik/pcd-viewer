@@ -154,11 +154,15 @@ function PointCloud({ url }) {
 function App() {
   const url = "assets/lloyd_pcd.ply";
   return (
-    <Canvas style={{ height: '700px', background: '#7E00F4' }}>
-      <ambientLight />
-      <pointLight position={[100, 100, 100]} />
-      <PointCloud url={url} />
-    </Canvas>
+<div className="flex items-center justify-center h-screen bg-[#7E00F4]">
+  <Canvas className="w-full h-full">
+    <ambientLight />
+    <pointLight position={[100, 100, 100]} />
+    
+      <PointCloud url={url}  className="transform -translate-y-[35%]"/>
+    
+  </Canvas>
+</div>
   );
 }
 
