@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader';
-
-
+import { useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 // function PointCloud({ url }) {
 //   const pointCloudRef = useRef();
 //   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -152,7 +152,10 @@ function PointCloud({ url }) {
 }
 
 function App() {
+  const { username, id } = useParams();
   const url = "assets/lloyd_pcd.ply";
+  console.log(username, id)
+  const url1 = `https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${username}_${id}/pcd_${id}.ply`;
   return (
 <div className="flex justify-center items-center h-screen bg-[#7E00F4]">
   <div className='w-4/5 h-4/5 border-8'>
@@ -160,7 +163,7 @@ function App() {
     <ambientLight   />
   <pointLight position={[1, 1, 1]} />
     
-      <PointCloud url={url}   />
+      <PointCloud url={url1}   />
     
   </Canvas>
   </div>
