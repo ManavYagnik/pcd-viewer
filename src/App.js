@@ -3,57 +3,12 @@ import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader';
 import { useParams } from 'react-router-dom';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-// function PointCloud({ url }) {
-//   const pointCloudRef = useRef();
-//   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-
-//   // Load the PLY file and create the point cloud
-//   useEffect(() => {
-//     const loader = new PLYLoader();
-//     loader.load(url, (geometry) => {
-//       const material = new THREE.PointsMaterial({ size: 0.01, vertexColors: true });
-//       const points = new THREE.Points(geometry, material);
-//       pointCloudRef.current.add(points);
-
-//       pointCloudRef.current.scale.set(1.5, 1.5, 1.5);
-//     });
-//   }, [url]);
-
-//   // Track mouse movement
-//   useEffect(() => {
-//     const handleMouseMove = (event) => {
-//       setMousePos({
-//         x: event.clientX,
-//         y: event.clientY,
-//       });
-//     };
-
-//     window.addEventListener('mousemove', handleMouseMove);
-
-//     return () => {
-//       window.removeEventListener('mousemove', handleMouseMove);
-//     };
-//   }, []);
-
-//   // Rotate the point cloud based on mouse movement
-//   useFrame(() => {
-//     if (pointCloudRef.current) {
-//       const deltaMove = mousePos.x - window.innerWidth / 2; // Calculate the delta movement
-//       const rotationSpeed = 0.01; // Speed of rotation
-//       pointCloudRef.current.rotation.z += (deltaMove * rotationSpeed) / 1000; // Apply rotation
-//     }
-//   });
-
-//   return <group ref={pointCloudRef} />;
-// }
 
 function PointCloud({ url }) {
   const pointCloudRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
   const [startMousePos, setStartMousePos] = useState({ x: 0, y: 0 });
 
-  // Load the PLY file and create the point cloud
   useEffect(() => {
     const loader = new PLYLoader();
     loader.load(url, (geometry) => {
@@ -61,113 +16,106 @@ function PointCloud({ url }) {
       const points = new THREE.Points(geometry, material);
       pointCloudRef.current.add(points);
       pointCloudRef.current.rotation.x = -Math.PI / 2;
-
-      // Scale the point cloud
-      pointCloudRef.current.scale.set(4, 4, 4); // Adjust the scale values as needed
+      pointCloudRef.current.scale.set(4, 4, 4); // Adjust scale
     });
   }, [url]);
 
-  // Handle mouse down event
   const handleMouseDown = (event) => {
     setIsDragging(true);
     setStartMousePos({ x: event.clientX, y: event.clientY });
   };
 
-  const handleTouchStart = (event) => {
-    setIsDragging(true);
-    const touch = event.touches[0]; // Get the first touch point
-    setStartMousePos({ x: touch.clientX, y: touch.clientY });
-  };
-
-  // Handle mouse move event
   const handleMouseMove = (event) => {
     if (isDragging) {
       const deltaX = event.clientX - startMousePos.x;
       const deltaY = event.clientY - startMousePos.y;
-
       const sensitivity = 0.0001;
-
-      // Rotate around Y-axis for horizontal drag
-      pointCloudRef.current.rotation.z += deltaX * sensitivity; // Adjust rotation speed as needed
-
-      // Rotate around X-axis for vertical drag
-      pointCloudRef.current.rotation.x += deltaY * sensitivity; // Adjust rotation speed as needed
-
-      // Update the starting mouse position for the next frame
+      pointCloudRef.current.rotation.z += deltaX * sensitivity;
+      pointCloudRef.current.rotation.x += deltaY * sensitivity;
       setStartMousePos({ x: event.clientX, y: event.clientY });
     }
   };
 
-  const handleTouchMove = (event) => {
-    if (isDragging) {
-      const touch = event.touches[0]; // Get the first touch point
-      const deltaX = touch.clientX - startMousePos.x;
-      const deltaY = touch.clientY - startMousePos.y;
+  const handleMouseUp = () => setIsDragging(false);
 
-      // Adjust the sensitivity factor
-      const sensitivity = 0.0001; // Lower value for less sensitivity
-
-      // Rotate around Y-axis for horizontal drag
-      pointCloudRef.current.rotation.z += deltaX * sensitivity;
-
-      // Rotate around X-axis for vertical drag
-      pointCloudRef.current.rotation.x += deltaY * sensitivity;
-
-      // Update the starting mouse position for the next frame
-      setStartMousePos({ x: touch.clientX, y: touch.clientY });
-    }
-  };
-
-  // Handle mouse up event
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
-
-  // Add event listeners
   useEffect(() => {
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
 
-    window.addEventListener('touchstart', handleTouchStart);
-    window.addEventListener('touchmove', handleTouchMove);
-    window.addEventListener('touchend', handleTouchEnd);
-
     return () => {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isDragging]); // for removing warning: [isDragging, handleMouseMove, handleTouchMove]
+  }, [isDragging]);
 
   return <group ref={pointCloudRef} />;
 }
 
 function App() {
   const { username, id } = useParams();
-  const url = "assets/lloyd_pcd.ply";
-  console.log(username, id)
-  const url1 = `https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${username}_${id}/pcd_${id}.ply`;
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [fileUrl, setFileUrl] = useState(null);
+  const [filename, setFilename] = useState(null);
+  const [filename1, setFilename1] = useState(null);
+
+  const apiEndpoint = `http://3.12.41.119:8001/api/bucket_list/?username=${username}_${id}`;
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch(apiEndpoint);
+      if (!response.ok) {
+        throw new Error('Failed to fetch data from the server.');
+      }
+      const result = await response.json();
+      setData(result);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const outputIBPattern = `/output_IB_${id}.ply`;
+    const pcdPattern = `/pcd_${id}.ply`;
+
+    const outputIBFile = data.find((item) => item.includes(outputIBPattern));
+    const pcdFile = data.find((item) => item.includes(pcdPattern));
+
+    setFilename(outputIBFile || null);
+    setFilename1(pcdFile || null);
+  }, [data, id]);
+
+  // Update fileUrl state based on filenames
+  useEffect(() => {
+    if (filename) {
+      setFileUrl(`https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${filename}`);
+    } else if (filename1) {
+      setFileUrl(`https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${filename1}`);
+    }
+  }, [filename, filename1]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
-<div className="flex justify-center items-center h-screen bg-[#7E00F4]">
-  <div className='w-4/5 h-4/5 border-8'>
-  <Canvas className=''>
-    <ambientLight   />
-  <pointLight position={[1, 1, 1]} />
-    
-      <PointCloud url={url1}   />
-    
-  </Canvas>
-  </div>
-</div>
+    <div className="flex justify-center items-center h-screen bg-[#7E00F4]">
+      <div className='w-4/5 h-4/5'>
+        <Canvas>
+          <ambientLight />
+          <pointLight position={[1, 1, 1]} />
+          {fileUrl && <PointCloud url={fileUrl} />}
+        </Canvas>
+      </div>
+    </div>
   );
 }
 
