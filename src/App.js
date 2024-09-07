@@ -1,8 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo  } from 'react';
 import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader';
 import { useParams } from 'react-router-dom';
+// import three3d from '../assests/3d-view.png';
+// import ruler from '../assests/ruler.png';
+
 
 function PointCloud({ url }) {
   const pointCloudRef = useRef();
@@ -53,14 +56,18 @@ function PointCloud({ url }) {
   return <group ref={pointCloudRef} />;
 }
 
+
+
 function App() {
   const { username, id } = useParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [fileUrl, setFileUrl] = useState(null);
-  const [filename, setFilename] = useState(null);
-  const [filename1, setFilename1] = useState(null);
+  const [fileUrls, setFileUrls] = useState({
+    fileUrl: null,
+    torsoUrl: null,
+  });
+  const [isImageOne, setIsImageOne] = useState(true);
 
   const apiEndpoint = `http://3.12.41.119:8001/api/bucket_list/?username=${username}_${id}`;
 
@@ -81,42 +88,55 @@ function App() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [apiEndpoint]);
 
   useEffect(() => {
-    const outputIBPattern = `/output_IB_${id}.ply`;
-    const pcdPattern = `/pcd_${id}.ply`;
+    const patterns = {
+      outputIB: `/output_IB_${id}.ply`,
+      pcd: `/pcd_${id}.ply`,
+      torso: `/output_torso_${id}.ply`,
+    };
 
-    const outputIBFile = data.find((item) => item.includes(outputIBPattern));
-    const pcdFile = data.find((item) => item.includes(pcdPattern));
+    const findFile = (pattern) => data.find((item) => item.includes(pattern));
 
-    setFilename(outputIBFile || null);
-    setFilename1(pcdFile || null);
+    const outputIBFile = findFile(patterns.outputIB);
+    const pcdFile = findFile(patterns.pcd);
+    const torsoFile = findFile(patterns.torso);
+
+    const baseUrl = 'https://tylmen-life-1.s3.ap-south-1.amazonaws.com/';
+    setFileUrls({
+      fileUrl: outputIBFile ? `${baseUrl}${outputIBFile}` : (pcdFile ? `${baseUrl}${pcdFile}` : null),
+      torsoUrl: torsoFile ? `${baseUrl}${torsoFile}` : null,
+    });
   }, [data, id]);
 
-  // Update fileUrl state based on filenames
-  useEffect(() => {
-    if (filename) {
-      setFileUrl(`https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${filename}`);
-    } else if (filename1) {
-      setFileUrl(`https://tylmen-life-1.s3.ap-south-1.amazonaws.com/${filename1}`);
-    }
-  }, [filename, filename1]);
+  const finalUrl = useMemo(() => {
+    return isImageOne ?   fileUrls.torsoUrl: fileUrls.fileUrl;
+  }, [isImageOne, fileUrls]);
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
+  const toggleImage = () => {
+    setIsImageOne(prev => !prev);
+  };
+
   return (
     <div className="flex justify-center items-center h-screen bg-[#7E00F4]">
-      <div className='w-4/5 h-4/5'>
+      <div className='bg-white rounded-full cursor-pointer w-12 h-12 absolute top-10 flex items-center justify-center transition-transform transform hover:scale-105' onClick={toggleImage}>
+        <img src={isImageOne ? "https://i.imgur.com/xARnfU1.png" : "https://i.imgur.com/hhKsjCF.png"} alt="Toggle" width={"40px"} height={"40px"} />
+      </div>
+      <div className='w-4/5 h-4/5 absolute'>
         <Canvas>
           <ambientLight />
           <pointLight position={[1, 1, 1]} />
-          {fileUrl && <PointCloud url={fileUrl} />}
+          <PointCloud key={finalUrl} url={finalUrl} />
         </Canvas>
       </div>
     </div>
   );
 }
+
+
 
 export default App;
